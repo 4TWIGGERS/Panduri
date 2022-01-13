@@ -1,24 +1,30 @@
 {
-  "name": "guitar-app",
-  "version": "1.0.0",
-  "main": "node_modules/expo/AppEntry.js",
-  "scripts": {
-    "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
-    "web": "expo start --web",
-    "eject": "expo eject"
-  },
-  "dependencies": {
-    "expo": "~43.0.2",
-    "expo-status-bar": "~1.1.0",
-    "react": "17.0.1",
-    "react-dom": "17.0.1",
-    "react-native": "0.64.3",
-    "react-native-web": "0.17.1"
-  },
-  "devDependencies": {
-    "@babel/core": "^7.12.9"
-  },
-  "private": true
+	"name": "panduri-app",
+	"version": "1.0.0",
+	"main": "node_modules/expo/AppEntry.js",
+	"scripts": {
+		"start": "expo start",
+		"android": "expo start --android",
+		"ios": "expo start --ios",
+		"web": "expo start --web",
+		"eject": "expo eject"
+	},
+	"dependencies": {
+		"expo": "~43.0.2",
+		"expo-av": "~10.1.3",
+		"expo-status-bar": "~1.1.0",
+		"react": "17.0.1",
+		"react-dom": "17.0.1",
+		"react-native": "0.64.3",
+		"react-native-gesture-handler": "^1.10.3",
+		"react-native-reanimated": "^2.2.4",
+		"react-native-redash": "^16.2.2",
+		"react-native-svg": "^12.1.1",
+		"react-native-web": "0.17.1"
+	},
+	"devDependencies": {
+		"@babel/core": "^7.12.9",
+		"react-devtools": "^4.21.0"
+	},
+	"private": true
 }
