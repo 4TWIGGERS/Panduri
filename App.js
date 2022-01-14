@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { PanGestureHandler } from 'react-native-gesture-handler';
 import { Video } from 'expo-av';
 
@@ -30,9 +30,8 @@ let { height, width } = Dimensions.get('screen');
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
 export default function App() {
-	let pormula = (width - (width * 35) / 100) / 2 + 30;
+	let formula = (width - (width * 35) / 100) / 2 + 30;
 	let AVAILABLE_SPACE = 30;
-	const sliderX = 0;
 	const sliderY = height - height * 0.4;
 	const playbackObject = useRef();
 	const playbackObject2 = useRef();
@@ -47,85 +46,49 @@ export default function App() {
 	const isPlay3 = useSharedValue(false);
 	const knobY = useSharedValue(sliderY);
 
-	const path = useDerivedValue(() => {
-		const diffX = stringPath.value - width / 2;
-		const diffY = knobY.value - sliderY;
+	const [pathsArray] = useState([stringPath, stringPath2, stringPath3]);
 
-		const qX = width + diffX * 2;
-		const qY = sliderY + diffY * 2;
+	const paths = pathsArray.map((path) =>
+		useDerivedValue(() => {
+			const diffX = path.value - width / 2;
+			const diffY = knobY.value - sliderY;
 
-		return `M ${0} ${sliderX} Q ${qX} ${qY} ${0} ${height}`;
-	});
+			const qX = width + diffX * 2;
+			const qY = sliderY + diffY * 2;
 
-	const path2 = useDerivedValue(() => {
-		const diffX = stringPath2.value - width / 2;
-		const diffY = knobY.value - sliderY;
+			return `M ${0} ${0} Q ${qX} ${qY} ${0} ${height}`;
+		})
+	);
 
-		const qX = width + diffX * 2;
-		const qY = sliderY + diffY * 2;
+	const pathProps = paths.map((path) =>
+		useAnimatedProps(() => {
+			return {
+				d: path.value,
+			};
+		})
+	);
 
-		return `M ${0} ${sliderX} Q ${qX} ${qY} ${0} ${height}`;
-	});
+	const setOnPlaybackStatusUpdate = (refEl) => {
+		refEl.current.stopAsync();
+		refEl.current.playAsync();
 
-	const path3 = useDerivedValue(() => {
-		const diffX = stringPath3.value - width / 2;
-		const diffY = knobY.value - sliderY;
-
-		const qX = width + diffX * 2;
-		const qY = sliderY + diffY * 2;
-
-		return `M ${0} ${sliderX} Q ${qX} ${qY} ${0} ${height}`;
-	});
-
-	const pathProps = useAnimatedProps(() => {
-		return {
-			d: path.value,
-		};
-	});
-
-	const pathProps2 = useAnimatedProps(() => {
-		return {
-			d: path2.value,
-		};
-	});
-
-	const pathProps3 = useAnimatedProps(() => {
-		return {
-			d: path3.value,
-		};
-	});
+		refEl.current.setOnPlaybackStatusUpdate((playbackStatus) => {
+			if (playbackStatus.didJustFinish) {
+				refEl.current.stopAsync();
+			}
+		});
+	};
 
 	function playSound(num) {
 		switch (num) {
 			case 1:
-				playbackObject.current.stopAsync();
-				playbackObject.current.playAsync();
-
-				playbackObject.current.setOnPlaybackStatusUpdate((playbackStatus) => {
-					if (playbackStatus.didJustFinish) {
-						playbackObject.current.stopAsync();
-					}
-				});
+				setOnPlaybackStatusUpdate(playbackObject);
 				break;
 			case 2:
-				playbackObject2.current.stopAsync();
-				playbackObject2.current.playAsync();
-
-				playbackObject2.current.setOnPlaybackStatusUpdate((playbackStatus) => {
-					if (playbackStatus.didJustFinish) {
-						playbackObject2.current.stopAsync();
-					}
-				});
+				setOnPlaybackStatusUpdate(playbackObject2);
 				break;
 			case 3:
-				playbackObject3.current.stopAsync();
-				playbackObject3.current.playAsync();
-
-				playbackObject3.current.setOnPlaybackStatusUpdate((playbackStatus) => {
-					if (playbackStatus.didJustFinish) {
-						playbackObject3.current.stopAsync();
-					}
-				});
+				setOnPlaybackStatusUpdate(playbackObject3);
 				break;
 		}
 	}
@@ -152,7 +115,7 @@ export default function App() {
 	};
 
 	const cancelAnimation = (path) => {
-		path.value = withSpring(sliderX, {
+		path.value = withSpring(0, {
 			damping: 3,
 			stiffness: 150,
 			mass: 0.5,
@@ -161,17 +124,17 @@ export default function App() {
 
 	const animatePath = (
 		path,
-		pormula,
+		formula,
 		startX,
 		translationX,
 		absoluteX,
 		isPlayValue,
 		number
 	) => {
-		if (startX >= pormula - 5 && startX < pormula + 15) {
+		if (startX >= formula - 5 && startX < formula + 15) {
 			if (
-				absoluteX < pormula - AVAILABLE_SPACE ||
-				absoluteX > pormula + AVAILABLE_SPACE
+				absoluteX < formula - AVAILABLE_SPACE ||
+				absoluteX > formula + AVAILABLE_SPACE
 			) {
 				runOnJS(cancelAnimation)(path);
 				runOnJS(playDifferentSounds)(isPlayValue, number);
@@ -179,19 +142,19 @@ export default function App() {
 				path.value = translationX;
 			}
 		} else {
-			if (startX < pormula) {
-				if (absoluteX > pormula + AVAILABLE_SPACE) {
+			if (startX < formula) {
+				if (absoluteX > formula + AVAILABLE_SPACE) {
 					runOnJS(cancelAnimation)(path);
 					runOnJS(playDifferentSounds)(isPlayValue, number);
-				} else if (absoluteX >= pormula && absoluteX < pormula + 20) {
-					path.value = absoluteX - pormula;
+				} else if (absoluteX >= formula && absoluteX < formula + 20) {
+					path.value = absoluteX - formula;
 				}
-			} else if (startX > pormula) {
-				if (absoluteX < pormula - AVAILABLE_SPACE) {
+			} else if (startX > formula) {
+				if (absoluteX < formula - AVAILABLE_SPACE) {
 					runOnJS(cancelAnimation)(path);
 					runOnJS(playDifferentSounds)(isPlayValue, number);
-				} else if (absoluteX <= pormula && absoluteX - 20 < pormula) {
-					path.value = absoluteX - pormula;
+				} else if (absoluteX <= formula && absoluteX - 20 < formula) {
+					path.value = absoluteX - formula;
 				}
 			}
 		}
@@ -215,7 +178,7 @@ export default function App() {
 
 			runOnJS(animatePath)(
 				stringPath,
-				pormula,
+				formula,
 				startX,
 				translationX,
 				absoluteX,
@@ -225,7 +188,7 @@ export default function App() {
 
 			runOnJS(animatePath)(
 				stringPath2,
-				pormula + 40,
+				formula + 40,
 				startX,
 				translationX,
 				absoluteX,
@@ -235,7 +198,7 @@ export default function App() {
 
 			runOnJS(animatePath)(
 				stringPath3,
-				pormula + 70,
+				formula + 70,
 				startX,
 				translationX,
 				absoluteX,
@@ -259,13 +222,13 @@ export default function App() {
 
 			<View style={styles.container}>
 				<Strings
-					pathProps1={pathProps}
-					pathProps2={pathProps2}
-					pathProps3={pathProps3}
+					pathProps1={pathProps[0]}
+					pathProps2={pathProps[1]}
+					pathProps3={pathProps[2]}
 				/>
 
 				<PanGestureHandler onGestureEvent={gestureHandler}>
-					<AnimatedTouchable style={styles.AnimatedTouchableopacity}>
+					<AnimatedTouchable style={styles.AnimatedTouchableOpacity}>
 						<Animated.View />
 					</AnimatedTouchable>
 				</PanGestureHandler>
@@ -299,7 +262,7 @@ const styles = StyleSheet.create({
 		justifyContent: 'center',
 		flexDirection: 'row',
 	},
-	AnimatedTouchableopacity: {
+	AnimatedTouchableOpacity: {
 		position: 'absolute',
 		width: width,
 		height: height,
