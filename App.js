@@ -40,13 +40,12 @@ export default function App() {
 	const stringPath = useSharedValue(0);
 	const stringPath2 = useSharedValue(0);
 	const stringPath3 = useSharedValue(0);
+	const [pathsArray] = useState([stringPath, stringPath2, stringPath3]);
 
 	const isPlay = useSharedValue(false);
 	const isPlay2 = useSharedValue(false);
 	const isPlay3 = useSharedValue(false);
 	const knobY = useSharedValue(sliderY);
-
-	const [pathsArray] = useState([stringPath, stringPath2, stringPath3]);
 
 	const paths = pathsArray.map((path) =>
 		useDerivedValue(() => {
@@ -97,16 +96,16 @@ export default function App() {
 		if (isPlayValue.value === false) {
 			switch (num) {
 				case 1:
-					runOnJS(playSound)(num);
+					playSound(num);
 					isPlay.value = true;
 					break;
 				case 2:
 					isPlay2.value = true;
-					runOnJS(playSound)(num);
+					playSound(num);
 					break;
 				case 3:
 					isPlay3.value = true;
-					runOnJS(playSound)(num);
+					playSound(num);
 					break;
 			}
 		}
@@ -136,23 +135,23 @@ export default function App() {
 				absoluteX < formula - AVAILABLE_SPACE ||
 				absoluteX > formula + AVAILABLE_SPACE
 			) {
-				runOnJS(cancelAnimation)(path);
-				runOnJS(playDifferentSounds)(isPlayValue, number);
+				cancelAnimation(path);
+				playDifferentSounds(isPlayValue, number);
 			} else {
 				path.value = translationX;
 			}
 		} else {
 			if (startX < formula) {
 				if (absoluteX > formula + AVAILABLE_SPACE) {
-					runOnJS(cancelAnimation)(path);
-					runOnJS(playDifferentSounds)(isPlayValue, number);
+					cancelAnimation(path);
+					playDifferentSounds(isPlayValue, number);
 				} else if (absoluteX >= formula && absoluteX < formula + 20) {
 					path.value = absoluteX - formula;
 				}
 			} else if (startX > formula) {
 				if (absoluteX < formula - AVAILABLE_SPACE) {
-					runOnJS(cancelAnimation)(path);
-					runOnJS(playDifferentSounds)(isPlayValue, number);
+					cancelAnimation(path);
+					playDifferentSounds(isPlayValue, number);
 				} else if (absoluteX <= formula && absoluteX - 20 < formula) {
 					path.value = absoluteX - formula;
 				}
@@ -207,9 +206,7 @@ export default function App() {
 			);
 		},
 		onEnd: () => {
-			runOnJS(cancelAnimation)(stringPath);
-			runOnJS(cancelAnimation)(stringPath2);
-			runOnJS(cancelAnimation)(stringPath3);
+			pathsArray.map((stringPath) => runOnJS(cancelAnimation)(stringPath));
 		},
 	});
 
