@@ -1,6 +1,6 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import { PanGestureHandler } from 'react-native-gesture-handler';
-import { Video } from 'expo-av';
+import { Video, Audio } from 'expo-av';
 
 import {
 	StyleSheet,
@@ -30,8 +30,8 @@ let { height, width } = Dimensions.get('screen');
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
 export default function App() {
-	let formula = (width - (width * 35) / 100) / 2 + 30;
-	let AVAILABLE_SPACE = 30;
+	const position = (width - (width * 35) / 100) / 2 + 30;
+	const AVAILABLE_SPACE = 30;
 	const sliderY = height - height * 0.4;
 	const playbackObject = useRef();
 	const playbackObject2 = useRef();
@@ -40,16 +40,32 @@ export default function App() {
 	const stringPath = useSharedValue(0);
 	const stringPath2 = useSharedValue(0);
 	const stringPath3 = useSharedValue(0);
-	const [pathsArray] = useState([stringPath, stringPath2, stringPath3]);
+	const pathsArray = useSharedValue([
+		{
+			id: 1,
+			path: stringPath,
+			number: position,
+			isPlaying: false,
+		},
+		{
+			id: 2,
+			path: stringPath2,
+			number: position + 30,
+			isPlaying: false,
+		},
+		{
+			id: 3,
+			path: stringPath3,
+			number: position + 70,
+			isPlaying: false,
+		},
+	]);
 
-	const isPlay = useSharedValue(false);
-	const isPlay2 = useSharedValue(false);
-	const isPlay3 = useSharedValue(false);
 	const knobY = useSharedValue(sliderY);
 
-	const paths = pathsArray.map((path) =>
+	const paths = pathsArray.value.map((strings) =>
 		useDerivedValue(() => {
-			const diffX = path.value - width / 2;
+			const diffX = strings.path.value - width / 2;
 			const diffY = knobY.value - sliderY;
 
 			const qX = width + diffX * 2;
@@ -67,7 +83,7 @@ export default function App() {
 		})
 	);
 
-	const setOnPlaybackStatusUpdate = (refEl) => {
+	const setOnPlaybackStatusUpdate = async (refEl) => {
 		refEl.current.stopAsync();
 		refEl.current.playAsync();
 
@@ -92,28 +108,31 @@ export default function App() {
 		}
 	}
 
-	const playDifferentSounds = (isPlayValue, num) => {
-		if (isPlayValue.value === false) {
-			switch (num) {
-				case 1:
-					playSound(num);
-					isPlay.value = true;
-					break;
-				case 2:
-					isPlay2.value = true;
-					playSound(num);
-					break;
-				case 3:
-					isPlay3.value = true;
-					playSound(num);
-					break;
+	const changeSharedValue = (id) => {
+		'worklet';
+		let newArray = pathsArray.value.map((strings) => {
+			if (id === strings.id) {
+				return { ...strings, isPlaying: true };
+			} else {
+				return strings;
 			}
+		});
+
+		pathsArray.value = newArray;
+	};
+
+	const playDifferentSounds = (isPlayValue, num) => {
+		'worklet';
+		if (isPlayValue === false) {
+			runOnJS(playSound)(num);
+			changeSharedValue(num);
 		}
 
 		isPlayValue.value = true;
 	};
 
 	const cancelAnimation = (path) => {
+		'worklet';
 		path.value = withSpring(0, {
 			damping: 3,
 			stiffness: 150,
@@ -123,17 +142,19 @@ export default function App() {
 
 	const animatePath = (
 		path,
-		formula,
+		position,
 		startX,
 		translationX,
 		absoluteX,
 		isPlayValue,
 		number
 	) => {
-		if (startX >= formula - 5 && startX < formula + 15) {
+		'worklet';
+
+		if (startX >= position - 5 && startX < position + 15) {
 			if (
-				absoluteX < formula - AVAILABLE_SPACE ||
-				absoluteX > formula + AVAILABLE_SPACE
+				absoluteX < position - AVAILABLE_SPACE ||
+				absoluteX > position + AVAILABLE_SPACE
 			) {
 				cancelAnimation(path);
 				playDifferentSounds(isPlayValue, number);
@@ -141,19 +162,19 @@ export default function App() {
 				path.value = translationX;
 			}
 		} else {
-			if (startX < formula) {
-				if (absoluteX > formula + AVAILABLE_SPACE) {
+			if (startX < position) {
+				if (absoluteX > position + AVAILABLE_SPACE) {
 					cancelAnimation(path);
 					playDifferentSounds(isPlayValue, number);
-				} else if (absoluteX >= formula && absoluteX < formula + 20) {
-					path.value = absoluteX - formula;
+				} else if (absoluteX >= position && absoluteX < position + 20) {
+					path.value = absoluteX - position;
 				}
-			} else if (startX > formula) {
-				if (absoluteX < formula - AVAILABLE_SPACE) {
+			} else if (startX > position) {
+				if (absoluteX < position - AVAILABLE_SPACE) {
 					cancelAnimation(path);
 					playDifferentSounds(isPlayValue, number);
-				} else if (absoluteX <= formula && absoluteX - 20 < formula) {
-					path.value = absoluteX - formula;
+				} else if (absoluteX <= position && absoluteX - 20 < position) {
+					path.value = absoluteX - position;
 				}
 			}
 		}
@@ -164,9 +185,10 @@ export default function App() {
 			ctx.translationX = _.translationX;
 			ctx.absoluteX = _.absoluteX;
 			ctx.offsetY = _.y;
-			isPlay.value = false;
-			isPlay2.value = false;
-			isPlay3.value = false;
+			const newArray = pathsArray.value.map((stringPath) => {
+				return { ...stringPath, isPlaying: false };
+			});
+			pathsArray.value = newArray;
 		},
 		onActive: (event, ctx) => {
 			let startX = ctx.absoluteX;
@@ -175,38 +197,22 @@ export default function App() {
 
 			knobY.value = ctx.offsetY + event.translationY;
 
-			runOnJS(animatePath)(
-				stringPath,
-				formula,
-				startX,
-				translationX,
-				absoluteX,
-				isPlay,
-				1
-			);
-
-			runOnJS(animatePath)(
-				stringPath2,
-				formula + 40,
-				startX,
-				translationX,
-				absoluteX,
-				isPlay2,
-				2
-			);
-
-			runOnJS(animatePath)(
-				stringPath3,
-				formula + 70,
-				startX,
-				translationX,
-				absoluteX,
-				isPlay3,
-				3
-			);
+			pathsArray.value.forEach((string, i) => {
+				animatePath(
+					string.path,
+					string.number,
+					startX,
+					translationX,
+					absoluteX,
+					string.isPlaying,
+					string.id
+				);
+			});
 		},
 		onEnd: () => {
-			pathsArray.map((stringPath) => runOnJS(cancelAnimation)(stringPath));
+			pathsArray.value.forEach((stringPath) =>
+				cancelAnimation(stringPath.path)
+			);
 		},
 	});
 
@@ -229,7 +235,6 @@ export default function App() {
 						<Animated.View />
 					</AnimatedTouchable>
 				</PanGestureHandler>
-
 				<Video
 					ref={playbackObject}
 					source={sounds[0]}
