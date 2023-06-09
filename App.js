@@ -1,6 +1,9 @@
 import React, { useRef } from 'react';
-import { PanGestureHandler } from 'react-native-gesture-handler';
-import { Video, Audio } from 'expo-av';
+import {
+	GestureHandlerRootView,
+	PanGestureHandler,
+} from 'react-native-gesture-handler';
+import { Video } from 'expo-av';
 
 import {
 	StyleSheet,
@@ -217,9 +220,13 @@ export default function App() {
 	});
 
 	return (
-		<>
+		<GestureHandlerRootView style={{ flex: 1 }}>
 			<Image
-				style={{ width, height, position: 'absolute' }}
+				style={{
+					width,
+					height,
+					position: 'absolute',
+				}}
 				source={require('./assets/fandura.png')}
 			/>
 
@@ -232,9 +239,10 @@ export default function App() {
 
 				<PanGestureHandler onGestureEvent={gestureHandler}>
 					<AnimatedTouchable style={styles.AnimatedTouchableOpacity}>
-						<Animated.View />
+						<Animated.View collapsable={false} />
 					</AnimatedTouchable>
 				</PanGestureHandler>
+
 				<Video
 					ref={playbackObject}
 					source={sounds[0]}
@@ -253,7 +261,7 @@ export default function App() {
 					style={{ opacity: 0, zIndex: -1 }}
 				/>
 			</View>
-		</>
+		</GestureHandlerRootView>
 	);
 }
 
