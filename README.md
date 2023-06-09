@@ -1,3 +1,4 @@
 ###  Here's the result
 
-<img src="https://github.com/front-end-jeko/panduri-app/blob/main/assets/pandura.gif" width="300">
+https://github.com/4TWIGGERS/Panduri/assets/43757639/c483e332-7db2-4adf-9ce0-b0701c6146e4
+
